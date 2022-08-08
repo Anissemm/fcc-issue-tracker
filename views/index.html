@@ -16,8 +16,8 @@
     </header>
     <section style="margin: 0 50px;">
       <h3>Example <code>GET</code> usage</h3>
-      <code>/api/issues/{project}</code><br>
-      <code>/api/issues/{project}?open=true&amp;assigned_to=Joe</code><br>
+      <code>/api/issues/issuetracker</code><br>
+      <code>/api/issues/issuetracker?open=true&amp;assigned_to=Joe</code><br>
       <h3>Example return</h3>
       <pre>
 <code>[
@@ -41,8 +41,8 @@
     <section id='testui' style='margin-left: 50px;'>
       <h3>Examples</h3>
       Go to <a href='/api/issues/apitest/'><code>/api/issues/apitest/</code></a>  project
-      <h2 style="text-align: left">API Tests</h2>
-      <h3>Submit issue on <i>apitest</i></h3>
+      <h2 style="text-align: left">Test Api</h2>
+      <h3>Submit issue on <i>issue tracker</i></h3>
       <form id="testForm" class="border">
         <input type="text" name="issue_title" placeholder="*Title" style="width: 100px" required=''><br>
         <textarea type="text" name="issue_text" placeholder="*Text" style="width: 100px" required=''></textarea><br>
@@ -62,7 +62,7 @@
         <label><input type="checkbox" name="open" value="false"> Check to close issue</label><br>
         <button type="submit">Submit Issue</button>
       </form><br>
-      <h3>Delete issue on <i>apitest</i></h3>
+      <h3>Delete issue on <i>api test</i></h3>
       <form id="testForm3" class="border">
         <input type="text" name="_id" placeholder="_id" style="width: 100px" required=''><br>
         <button type="submit">Delete Issue</button>
