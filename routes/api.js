@@ -1,23 +1,32 @@
 const { ObjectId } = require('mongodb')
-module.exports = function (app, issuesCollection) {
+module.exports = function (app, issuesDb) {
 
   app.route('/api/issues/:project')
 
     .get(async function (req, res) {
+      const { project } = req.params
       const { open } = req.query
-      const parsedOpen = open === 'true' ? true : open === 'false' ? false : null
 
-      const foundIssues = await issuesCollection.find({
-        ...req.query,
-        open: parsedOpen  
-      })
+      if (typeof open === 'string') {
+        req.query.open = open === 'true' ? true : open === 'false' ? false : undefined
+      }
+
+      const issues = issuesDb.collection(project)
+
+
+      if (req.query._id) {
+        req.query._id = new ObjectId(req.query._id)
+      }
+
+      const foundIssues = await issues.find(req.query)
 
       const response = await foundIssues.toArray()
-      console.log(response)
+
       return res.send(response)
     })
 
     .post(async function (req, res) {
+      const { project } = req.params
       const {
         issue_title,
         issue_text,
@@ -29,7 +38,9 @@ module.exports = function (app, issuesCollection) {
         return res.send({ error: 'required field(s) missing' })
       }
 
-      const { insertedId } = await issuesCollection.insertOne({
+      const issues = issuesDb.collection(project)
+
+      const { insertedId } = await issues.insertOne({
         issue_title,
         issue_text,
         created_by,
@@ -40,22 +51,16 @@ module.exports = function (app, issuesCollection) {
         updated_on: new Date()
       }, { new: true })
 
-      const issue = await issuesCollection.findOne({ _id: insertedId })
+      const issue = await issues.findOne({ _id: insertedId })
 
       return res.send(issue)
     })
 
 
     .put(async function (req, res) {
-      const {
-        _id,
-        issue_title,
-        issue_text,
-        created_by,
-        assigned_to,
-        status_text,
-        open
-      } = req.body
+      const { project } = req.params
+      const { _id } = req.body
+      const issues = issuesDb.collection(project)
 
       try {
 
@@ -64,17 +69,17 @@ module.exports = function (app, issuesCollection) {
         }
 
         const values = Object.entries(req.body).reduce((obj, item) => {
-          if (item[1] && item[0] !== '_id') obj[item[0]] = item[1]
+          if (item[1] && item[0] !== '_id' || item[0] === 'open') obj[item[0]] = item[1]
           return obj
         }, {})
 
-        if (Object.keys(values).length <= 1) {
+        if (Object.keys(values).length < 1) {
           return res.send({
             error: 'no update field(s) sent',
             _id
           })
         } else {
-          const presentIssue = await issuesCollection.findOne({ _id: new ObjectId(_id) })
+          const presentIssue = await issues.findOne({ _id: new ObjectId(_id) })
 
           if (!presentIssue) {
             return res.send({
@@ -83,7 +88,7 @@ module.exports = function (app, issuesCollection) {
             })
           }
 
-          await issuesCollection.updateOne({ _id: presentIssue._id }, {
+          await issues.updateOne({ _id: presentIssue._id }, {
             $set: {
               ...values,
               updated_on: new Date()
@@ -100,19 +105,22 @@ module.exports = function (app, issuesCollection) {
 
     .delete(async function (req, res) {
       const { _id } = req.body
+      const { project } = req.params
+      const issues = issuesDb.collection(project)
+
       try {
 
         if (!_id) {
           return res.send({ error: 'missing _id' })
         }
 
-        const presentIssue = await issuesCollection.findOne({ _id: new ObjectId(_id) })
+        const presentIssue = await issues.findOne({ _id: new ObjectId(_id) })
 
         if (!presentIssue) {
           return res.send({ error: 'could not delete', _id })
         }
 
-        const result = await issuesCollection.deleteOne({ _id: new ObjectId(_id) })
+        const result = await issues.deleteOne({ _id: new ObjectId(_id) })
 
         if (result.deletedCount === 1) {
           return res.send({
